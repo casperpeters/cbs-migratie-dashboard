@@ -1,0 +1,10 @@
+{
+  "name": "cbs-migratie-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Live CBS migratie dashboard voor Nederland",
+  "scripts": {
+    "test": "python -m unittest discover -s tests -v",
+    "check:js": "node --check app.js"
+  }
+}
