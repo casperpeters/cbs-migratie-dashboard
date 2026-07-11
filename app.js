@@ -128,13 +128,12 @@ async function loadDashboard() {
     state.fetchedAt = new Date();
 
     updateSummaryCards();
-    updateInsightSummary();
+    renderVisualInsights();
     renderTrendChart();
     renderOriginChart();
     renderOriginList();
     renderCountryChart();
     renderCountryList();
-    updateMotiveCards();
     renderMotiveChart();
     renderMotiveList();
     $('loadedAt').textContent = state.fetchedAt.toLocaleString('nl-NL', { dateStyle: 'medium', timeStyle: 'short' });
@@ -259,25 +258,13 @@ function updateSummaryCards() {
 
   $('latestPeriod').textContent = periodTitle;
   $('latestStatus').textContent = status;
-  $('heroSaldo').textContent = formatSigned(latest.MigratiesaldoInclusiefAdministratie_3);
 
-  setMetric('immigration', latest.Immigratie_1, delta(latest, sameMonthLastYear, 'Immigratie_1'), 't.o.v. dezelfde maand vorig jaar');
-  setMetric('emigration', latest.EmigratieInclusiefAdministratieveC_2, delta(latest, sameMonthLastYear, 'EmigratieInclusiefAdministratieveC_2'), 't.o.v. dezelfde maand vorig jaar');
-  setMetric('saldo', latest.MigratiesaldoInclusiefAdministratie_3, delta(latest, sameMonthLastYear, 'MigratiesaldoInclusiefAdministratie_3'), 't.o.v. dezelfde maand vorig jaar', true);
-
-  const last12 = state.monthly.slice(-12);
-  const previous12 = state.monthly.slice(-24, -12);
-  const sum12 = sum(last12, 'MigratiesaldoInclusiefAdministratie_3');
-  const sumPrevious12 = previous12.length === 12 ? sum(previous12, 'MigratiesaldoInclusiefAdministratie_3') : null;
-  $('twelveMonthSaldo').textContent = formatSigned(sum12);
-  $('twelveMonthCaption').textContent = sumPrevious12 === null
-    ? 'Netto saldo over de laatste 12 maanden'
-    : `${formatSigned(sum12 - sumPrevious12)} t.o.v. de 12 maanden ervoor`;
-  $('twelveMonthCaption').className = sumPrevious12 !== null ? classFor(sum12 - sumPrevious12) : '';
+  setMetric('immigration', latest.Immigratie_1, delta(latest, sameMonthLastYear, 'Immigratie_1'), 'jaar-op-jaar');
+  setMetric('emigration', latest.EmigratieInclusiefAdministratieveC_2, delta(latest, sameMonthLastYear, 'EmigratieInclusiefAdministratieveC_2'), 'jaar-op-jaar');
+  setMetric('saldo', latest.MigratiesaldoInclusiefAdministratie_3, delta(latest, sameMonthLastYear, 'MigratiesaldoInclusiefAdministratie_3'), 'jaar-op-jaar', true);
 }
 
-function updateInsightSummary() {
-  const latest = state.latest;
+function renderVisualInsights() {
   const last12 = state.monthly.slice(-12);
   const previous12 = state.monthly.slice(-24, -12);
   const saldo12 = sum(last12, 'MigratiesaldoInclusiefAdministratie_3');
@@ -285,30 +272,38 @@ function updateInsightSummary() {
   const topCountry = state.countryRows[0];
   const dominantMotive = [...state.motiveRows].sort((a, b) => b.value - a.value)[0];
 
-  const sentences = [
-    `In ${periodLabel(latest.Perioden)} kwamen ${formatter.format(latest.Immigratie_1)} mensen naar Nederland en vertrokken er ${formatter.format(latest.EmigratieInclusiefAdministratieveC_2)}. Het saldo was ${formatSigned(latest.MigratiesaldoInclusiefAdministratie_3)}.`
-  ];
-
+  $('insightSaldo12').textContent = formatSigned(saldo12);
   if (previousSaldo12 !== null) {
     const difference = saldo12 - previousSaldo12;
-    const direction = difference > 0 ? 'hoger' : difference < 0 ? 'lager' : 'gelijk';
-    const comparison = difference === 0 ? direction : `${formatter.format(Math.abs(difference))} ${direction}`;
-    sentences.push(`Over de laatste 12 maanden was het saldo ${formatSigned(saldo12)}; ${comparison} dan in de 12 maanden ervoor.`);
-  }
-  if (topCountry) {
-    sentences.push(`${topCountry.label} was het grootste afzonderlijke herkomstland met ${percentFormatter.format(topCountry.share)} van de immigratie in de laatste maand.`);
-  }
-  if (dominantMotive) {
-    sentences.push(`Binnen de jaarlijkse niet-EU/EFTA-dataset was ${dominantMotive.label.toLowerCase()} het grootste migratiemotief (${percentFormatter.format(dominantMotive.share)}).`);
+    const barMax = Math.max(Math.abs(saldo12), Math.abs(previousSaldo12), 1);
+    $('insightSaldoCurrent').style.height = `${Math.abs(saldo12) / barMax * 100}%`;
+    $('insightSaldoPrevious').style.height = `${Math.abs(previousSaldo12) / barMax * 100}%`;
+    $('insightSaldoPreviousValue').textContent = formatSigned(previousSaldo12);
+    $('insightSaldoBars').setAttribute('aria-label', `Laatste 12 maanden ${formatSigned(saldo12)}; voorgaande 12 maanden ${formatSigned(previousSaldo12)}`);
+    $('insightSaldoDelta').textContent = `${formatSigned(difference)} vs vorig`;
+    $('insightSaldoDelta').className = `insight-caption ${classFor(difference)}`;
   }
 
-  $('insightSummary').textContent = sentences.join(' ');
+  if (topCountry) {
+    $('insightCountry').textContent = topCountry.label;
+    $('insightCountryBar').style.width = `${topCountry.share * 100}%`;
+    $('insightCountryShare').textContent = `${percentFormatter.format(topCountry.share)} van immigratie`;
+  }
+
+  if (dominantMotive) {
+    $('insightMotive').textContent = dominantMotive.label;
+    $('insightMotiveBar').style.width = `${dominantMotive.share * 100}%`;
+    $('insightMotiveShare').textContent = `${percentFormatter.format(dominantMotive.share)} van dataset`;
+  } else {
+    $('insightMotive').textContent = 'Niet beschikbaar';
+    $('insightMotiveShare').textContent = 'CBS-deelbron offline';
+  }
 }
 
 function setMetric(prefix, value, change, caption, signed = false) {
   $(`${prefix}Value`).textContent = signed ? formatSigned(value) : formatter.format(value);
   const deltaEl = $(`${prefix}Delta`);
-  deltaEl.textContent = `${formatSigned(change)} ${caption}`;
+  deltaEl.textContent = `${formatSigned(change)} · ${caption}`;
   deltaEl.className = classFor(change);
 }
 
@@ -328,6 +323,7 @@ function renderTrendChart() {
       type: 'bar',
       label: 'Migratiesaldo',
       data: saldo,
+      yAxisID: 'ySaldo',
       order: 3,
       borderWidth: 1,
       borderRadius: 8,
@@ -339,19 +335,21 @@ function renderTrendChart() {
       type: 'line',
       label: 'Immigratie',
       data: immigratie,
+      yAxisID: 'y',
       order: 1,
       tension: .34,
-      pointRadius: 0,
+      pointRadius: rows.map((_, index) => index === rows.length - 1 ? 4 : 0),
       pointHoverRadius: 4,
       borderColor: '#828fff',
       backgroundColor: 'rgba(130, 143, 255, .12)',
       borderWidth: 3,
-      fill: true
+      fill: false
     },
     {
       type: 'line',
       label: 'Emigratie incl. correcties',
       data: emigratie,
+      yAxisID: 'y',
       order: 2,
       tension: .34,
       pointRadius: 0,
@@ -370,9 +368,16 @@ function renderTrendChart() {
     return;
   }
 
+  const options = baseChartOptions('Immigratie / emigratie');
+  const saldoAxis = axisOptions('Saldo');
+  saldoAxis.position = 'right';
+  saldoAxis.grid = { drawOnChartArea: false };
+  saldoAxis.ticks.color = '#7dd3a7';
+  options.scales.ySaldo = saldoAxis;
+
   state.trendChart = new Chart($('trendChart'), {
     data: { labels, datasets },
-    options: baseChartOptions('Aantal personen')
+    options
   });
 }
 
@@ -447,13 +452,13 @@ function renderCountryChart() {
 
   $('countryPeriod').textContent = periodLabel(state.latest.Perioden);
   const rows = state.countryRows.slice(0, 10);
-  const labels = rows.map((row) => row.label);
+  const labels = rows.map((row) => row.label.replace('Verenigde Staten van Amerika', 'Verenigde Staten'));
   const datasets = [
     {
       label: 'Immigratie',
       data: rows.map((row) => row.immigratie),
-      borderColor: rows.map((row) => row.color),
-      backgroundColor: rows.map((row) => `${row.color}cc`),
+      borderColor: '#828fff',
+      backgroundColor: 'rgba(130,143,255,.72)',
       borderWidth: 1,
       borderRadius: 8,
       borderSkipped: false
@@ -490,43 +495,23 @@ function renderCountryList() {
     </div>`).join('');
 }
 
-function updateMotiveCards() {
-  if (!state.motiveRows.length) return;
-
-  const labor = motiveByKey('A009232');
-  const asylum = motiveByKey('A009233');
-  const temporaryProtection = motiveByKey('A052135');
-  $('motivePeriod').textContent = yearLabel(state.motivePeriod?.Key ?? state.motivePeriod?.Title ?? '—');
-  $('motiveTotalValue').textContent = formatter.format(state.motiveTotal);
-
-  setMotiveMetric('motiveLabor', labor, `Gezin meegekomen met arbeid: ${formatter.format(state.motiveDetails.familyWithLabor ?? 0)}`);
-  setMotiveMetric('motiveAsylum', asylum, `Gezin meegekomen met asiel: ${formatter.format(state.motiveDetails.familyWithAsylum ?? 0)}`);
-  setMotiveMetric('motiveProtection', temporaryProtection, 'O.a. tijdelijke bescherming voor Oekraïne');
-}
-
-function motiveByKey(key) {
-  return state.motiveRows.find((row) => row.key === key) ?? { value: 0, share: 0 };
-}
-
-function setMotiveMetric(prefix, row, caption) {
-  $(`${prefix}Share`).textContent = percentFormatter.format(row.share ?? 0);
-  $(`${prefix}Value`).textContent = `${formatter.format(row.value ?? 0)} personen`;
-  $(`${prefix}Detail`).textContent = caption;
-}
-
 function renderMotiveChart() {
-  if (!state.motiveRows.length || !window.Chart) return;
+  if (!state.motiveRows.length) return;
+  $('motivePeriod').textContent = yearLabel(state.motivePeriod?.Key ?? state.motivePeriod?.Title ?? '—');
+  if (!window.Chart) return;
 
-  const labels = state.motiveRows.map((row) => row.shortLabel);
-  const data = state.motiveRows.map((row) => row.value);
-  const colors = state.motiveRows.map((row) => row.color);
+  const rows = [...state.motiveRows].sort((a, b) => b.value - a.value);
+  const labels = rows.map((row) => row.shortLabel);
+  const data = rows.map((row) => row.value);
+  const colors = rows.map((row) => row.color);
   const dataset = {
     label: 'Immigranten',
     data,
     backgroundColor: colors.map((color) => `${color}cc`),
     borderColor: colors,
     borderWidth: 1.4,
-    hoverOffset: 7
+    borderRadius: 8,
+    borderSkipped: false
   };
 
   if (state.motiveChart) {
@@ -537,42 +522,9 @@ function renderMotiveChart() {
   }
 
   state.motiveChart = new Chart($('motiveChart'), {
-    type: 'doughnut',
+    type: 'bar',
     data: { labels, datasets: [dataset] },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '62%',
-      plugins: {
-        legend: {
-          position: 'right',
-          labels: {
-            color: '#d0d6e0',
-            usePointStyle: true,
-            pointStyle: 'circle',
-            boxWidth: 7,
-            boxHeight: 7,
-            padding: 16,
-            font: { family: 'Inter', size: 12 }
-          }
-        },
-        tooltip: {
-          backgroundColor: '#191a1f',
-          borderColor: 'rgba(255,255,255,.12)',
-          borderWidth: 1,
-          padding: 12,
-          titleColor: '#f7f8f8',
-          bodyColor: '#d0d6e0',
-          callbacks: {
-            label(context) {
-              const value = Number(context.raw ?? 0);
-              const share = value / (state.motiveTotal || 1);
-              return `${context.label}: ${formatter.format(value)} personen (${percentFormatter.format(share)})`;
-            }
-          }
-        }
-      }
-    }
+    options: horizontalBarOptions('Aantal immigranten', false)
   });
 }
 
@@ -691,7 +643,9 @@ function formatSigned(value) {
 
 function compactNumber(value) {
   const number = Number(value);
-  if (Math.abs(number) >= 1000) return `${Math.round(number / 1000)}k`;
+  if (Math.abs(number) >= 1000) {
+    return `${(number / 1000).toLocaleString('nl-NL', { maximumFractionDigits: 1 })}k`;
+  }
   return formatter.format(number);
 }
 

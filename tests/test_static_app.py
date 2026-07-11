@@ -31,7 +31,7 @@ class StaticAppTests(unittest.TestCase):
         self.assertIn("countryChart", html)
         self.assertIn("countryList", html)
         self.assertIn("Top herkomstlanden", html)
-        self.assertIn("Herkomstlanden", html)
+        self.assertIn('href="#landen"', html)
 
     def test_javascript_builds_country_level_rows_from_cbs_herkomstland(self):
         js = (ROOT / "app.js").read_text(encoding="utf-8")
@@ -44,11 +44,12 @@ class StaticAppTests(unittest.TestCase):
 
     def test_html_shows_migration_motive_section(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
+        js = (ROOT / "app.js").read_text(encoding="utf-8")
         self.assertIn("motiveChart", html)
         self.assertIn("motiveList", html)
-        self.assertIn("Arbeidsmigratie", html)
-        self.assertIn("Asielmigratie", html)
-        self.assertIn("Migratiemotief", html)
+        self.assertIn("Migratiemotieven", html)
+        self.assertIn("horizontalBarOptions('Aantal immigranten', false)", js)
+        self.assertNotIn("type: 'doughnut'", js)
 
     def test_javascript_fetches_cbs_migration_motives(self):
         js = (ROOT / "app.js").read_text(encoding="utf-8")
@@ -69,14 +70,23 @@ class StaticAppTests(unittest.TestCase):
         self.assertIn('name="twitter:card"', html)
         self.assertIn('rel="canonical"', html)
 
-    def test_dashboard_explains_the_data_and_exposes_exact_trend_values(self):
+    def test_dashboard_leads_with_plots_and_keeps_exact_values_available(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         js = (ROOT / "app.js").read_text(encoding="utf-8")
-        self.assertIn("insightSummary", html)
-        self.assertIn("trendDataTableBody", html)
-        self.assertIn("updateInsightSummary", js)
+        for element_id in [
+            "insightSaldo12",
+            "insightSaldoBars",
+            "insightCountry",
+            "insightCountryBar",
+            "insightMotive",
+            "insightMotiveBar",
+            "trendDataTableBody",
+        ]:
+            self.assertIn(element_id, html)
+        self.assertNotIn("insightSummary", html)
+        self.assertIn("renderVisualInsights", js)
         self.assertIn("renderTrendTable", js)
-        self.assertIn("dezelfde maand vorig jaar", js)
+        self.assertIn("jaar-op-jaar", js)
 
     def test_motive_failure_does_not_block_the_monthly_dashboard(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")

@@ -41,38 +41,15 @@
   </header>
 
   <main id="top" class="shell">
-    <section class="hero">
-      <div class="hero-copy">
-        <div class="eyebrow"><span class="pulse"></span> Live via CBS StatLine OData</div>
-        <h1>De laatste migratiecijfers van Nederland, helder in beeld.</h1>
-        <p class="lede">Een compact dashboard met maandelijkse immigratie, emigratie en netto migratiesaldo. De grafieken laden rechtstreeks uit de CBS API-tabel <strong>85484NED</strong>.</p>
-        <div class="hero-actions">
-          <a class="button primary" href="#trend">Bekijk trend</a>
-          <a class="button ghost" href="#herkomst">Herkomst verdeling</a>
-          <a class="button ghost" href="#landen">Herkomstlanden</a>
-          <a class="button ghost" href="#motief">Arbeid/asiel</a>
-        </div>
+    <section class="dashboard-head">
+      <div>
+        <div class="eyebrow"><span class="pulse"></span> Live CBS-data</div>
+        <h1>Migratie Nederland</h1>
       </div>
-
-      <aside class="live-card" aria-label="Laatste maand samenvatting">
-        <div class="live-card__top">
-          <span>Laatste publicatie</span>
-          <span id="latestStatus" class="status-chip">Laden…</span>
-        </div>
-        <div id="latestPeriod" class="latest-period">CBS-data ophalen</div>
-        <div class="net-balance">
-          <span>Netto migratiesaldo</span>
-          <strong id="heroSaldo">—</strong>
-        </div>
-        <div class="mini-bars" aria-hidden="true">
-          <span style="height:42%"></span>
-          <span style="height:72%"></span>
-          <span style="height:56%"></span>
-          <span style="height:88%"></span>
-          <span style="height:64%"></span>
-          <span style="height:76%"></span>
-        </div>
-      </aside>
+      <div class="publication-meta" aria-label="Laatste publicatie">
+        <strong id="latestPeriod">CBS-data ophalen</strong>
+        <span id="latestStatus" class="status-chip">Laden…</span>
+      </div>
     </section>
 
     <section class="metrics-grid" aria-label="Belangrijkste cijfers">
@@ -91,19 +68,6 @@
         <strong id="saldoValue">—</strong>
         <small id="saldoDelta">Wacht op CBS API</small>
       </article>
-      <article class="metric-card">
-        <span class="metric-label">Laatste 12 maanden</span>
-        <strong id="twelveMonthSaldo">—</strong>
-        <small id="twelveMonthCaption">Netto saldo over 12 maanden</small>
-      </article>
-    </section>
-
-    <section id="dashboardContent" class="insight-panel" aria-labelledby="insightTitle">
-      <div class="insight-label">Kerninzicht</div>
-      <div>
-        <h2 id="insightTitle">Wat valt op?</h2>
-        <p id="insightSummary" aria-live="polite">De duiding verschijnt zodra de CBS-data is geladen.</p>
-      </div>
     </section>
 
     <section id="trend" class="panel chart-panel">
@@ -122,9 +86,9 @@
       <div class="chart-wrap trend-wrap">
         <canvas id="trendChart" aria-label="Trendgrafiek immigratie emigratie migratiesaldo" role="img"></canvas>
       </div>
-      <p class="source-note">Emigratie is inclusief saldo administratieve correcties, conform CBS-definitie.</p>
       <details class="data-details">
-        <summary>Bekijk exacte cijfers als tabel</summary>
+        <summary>Exacte cijfers & definitie</summary>
+        <p class="source-note">Emigratie is inclusief administratieve correcties.</p>
         <div class="table-scroll">
           <table>
             <caption>Maandelijkse immigratie, emigratie inclusief administratieve correcties en migratiesaldo</caption>
@@ -137,8 +101,28 @@
       </details>
     </section>
 
-    <section class="dashboard-grid">
-      <article id="herkomst" class="panel origin-panel">
+    <section id="dashboardContent" class="insight-grid" aria-label="Kerninzichten" aria-live="polite">
+      <article class="insight-plot">
+        <header><span>Saldo · 12 mnd</span></header>
+        <div id="insightSaldoBars" class="compare-bars" aria-label="Vergelijking met voorgaande 12 maanden">
+          <div><span id="insightSaldoCurrent"></span><small>Nu <strong id="insightSaldo12">—</strong></small></div>
+          <div><span id="insightSaldoPrevious"></span><small>Vorig <strong id="insightSaldoPreviousValue">—</strong></small></div>
+        </div>
+        <div id="insightSaldoDelta" class="insight-caption">—</div>
+      </article>
+      <article class="insight-plot">
+        <header><span>Topland</span><strong id="insightCountry">—</strong></header>
+        <div class="share-track" aria-hidden="true"><span id="insightCountryBar"></span></div>
+        <div id="insightCountryShare" class="insight-caption">—</div>
+      </article>
+      <article class="insight-plot">
+        <header><span>Topmotief</span><strong id="insightMotive">—</strong></header>
+        <div class="share-track motive" aria-hidden="true"><span id="insightMotiveBar"></span></div>
+        <div id="insightMotiveShare" class="insight-caption">—</div>
+      </article>
+    </section>
+
+    <section id="herkomst" class="panel origin-panel">
         <div class="panel-head compact">
           <div>
             <p class="section-kicker">Laatste maand</p>
@@ -149,21 +133,10 @@
         <div class="chart-wrap origin-wrap">
           <canvas id="originChart" aria-label="Herkomst verdeling immigratie en emigratie" role="img"></canvas>
         </div>
+      <details class="data-details">
+        <summary>Exacte waarden</summary>
         <div id="originList" class="origin-list" aria-live="polite"></div>
-      </article>
-
-      <article class="panel methodology">
-        <p class="section-kicker">Databron</p>
-        <h2>CBS Open Data API</h2>
-        <p>Deze site gebruikt <strong>geen nepdata</strong>: alle cijfers komen live uit CBS StatLine via OData.</p>
-        <dl>
-          <div><dt>Tabel</dt><dd>85484NED · Immi- en emigratie per maand</dd></div>
-          <div><dt>Selectie</dt><dd>Totaal mannen/vrouwen · herkomstland · totaal geboorteland</dd></div>
-          <div><dt>Eenheid</dt><dd>Aantal personen</dd></div>
-          <div><dt>Laatst geladen</dt><dd id="loadedAt">—</dd></div>
-        </dl>
-        <a class="button ghost full" href="https://opendata.cbs.nl/ODataApi/OData/85484NED" target="_blank" rel="noreferrer">Open API endpoint</a>
-      </article>
+      </details>
     </section>
 
     <section id="landen" class="panel country-panel">
@@ -177,60 +150,45 @@
       <div class="chart-wrap country-wrap">
         <canvas id="countryChart" aria-label="Top herkomstlanden van immigranten" role="img"></canvas>
       </div>
-      <div id="countryList" class="country-list" aria-live="polite"></div>
-      <p class="source-note">Top 12 landen/gebieden op basis van immigratie in de laatste CBS-maand. Herkomstland is de CBS-indeling van iemands herkomst.</p>
+      <details class="data-details">
+        <summary>Exacte waarden</summary>
+        <div id="countryList" class="country-list" aria-live="polite"></div>
+      </details>
     </section>
 
     <section id="motief" class="panel motive-panel">
       <div class="panel-head compact">
         <div>
           <p class="section-kicker">Migratiemotief</p>
-          <h2>Arbeidsmigratie en asielmigratie</h2>
+          <h2>Migratiemotieven</h2>
         </div>
-        <span id="motivePeriod" class="mono-chip">—</span>
-      </div>
-
-      <div class="motive-note">
-        <strong>Let op:</strong> CBS publiceert migratiemotief als jaarlijkse data voor immigranten met een niet-EU/EFTA-nationaliteit. Dit loopt dus niet 1-op-1 met de maandcijfers hierboven.
+        <div class="panel-meta">
+          <span class="dataset-chip" title="Jaarlijkse cijfers voor immigranten met een niet-EU/EFTA-nationaliteit">Jaarlijks · niet-EU/EFTA</span>
+          <span id="motivePeriod" class="mono-chip">—</span>
+        </div>
       </div>
       <div id="motiveError" class="inline-error hidden" role="status">
         De maandcijfers zijn beschikbaar, maar de migratiemotieven konden tijdelijk niet worden geladen.
       </div>
 
-      <div class="motive-cards" aria-label="Aandeel arbeidsmigratie en asielmigratie">
-        <article class="metric-card motive-card">
-          <span class="metric-label">Arbeidsmigratie</span>
-          <strong id="motiveLaborShare">—</strong>
-          <small id="motiveLaborValue">Wacht op CBS API</small>
-          <small id="motiveLaborDetail" class="motive-detail">—</small>
-        </article>
-        <article class="metric-card motive-card accent-card">
-          <span class="metric-label">Asielmigratie</span>
-          <strong id="motiveAsylumShare">—</strong>
-          <small id="motiveAsylumValue">Wacht op CBS API</small>
-          <small id="motiveAsylumDetail" class="motive-detail">—</small>
-        </article>
-        <article class="metric-card motive-card">
-          <span class="metric-label">Tijdelijke bescherming</span>
-          <strong id="motiveProtectionShare">—</strong>
-          <small id="motiveProtectionValue">Wacht op CBS API</small>
-          <small id="motiveProtectionDetail" class="motive-detail">—</small>
-        </article>
-        <article class="metric-card motive-card">
-          <span class="metric-label">Totaal in deze dataset</span>
-          <strong id="motiveTotalValue">—</strong>
-          <small>Niet-EU/EFTA-immigranten · tabel 84809NED</small>
-        </article>
+      <div class="chart-wrap motive-wrap">
+        <canvas id="motiveChart" aria-label="Verdeling naar migratiemotief" role="img"></canvas>
       </div>
-
-      <div class="motive-grid">
-        <div class="chart-wrap motive-wrap">
-          <canvas id="motiveChart" aria-label="Verdeling naar migratiemotief" role="img"></canvas>
-        </div>
+      <details class="data-details">
+        <summary>Exacte waarden & definitie</summary>
+        <p class="source-note">Jaarlijkse CBS-data voor niet-EU/EFTA-immigranten. Gezinsleden staan deels onder gezinsmigratie.</p>
         <div id="motiveList" class="motive-list" aria-live="polite"></div>
-      </div>
-      <p class="source-note">Arbeid en asiel zijn officiële CBS-motieven. Gezinsleden die meekomen met arbeids- of asielmigranten staan in CBS deels onder gezinsmigratie; daarom tonen de kaartjes die aantallen ook apart.</p>
+      </details>
     </section>
+
+    <details class="panel source-details">
+      <summary>CBS-bronnen <span id="loadedAt">—</span></summary>
+      <div class="source-grid">
+        <span>85484NED · maandcijfers</span>
+        <span>84809NED · motieven</span>
+        <a href="https://opendata.cbs.nl/ODataApi/OData/85484NED" target="_blank" rel="noreferrer">Open CBS API ↗</a>
+      </div>
+    </details>
   </main>
 
   <div id="loading" class="loading" role="status" aria-live="polite">

@@ -6,14 +6,14 @@ Mobielvriendelijke dashboardsite met live CBS-data over migratie in Nederland.
 
 ## Features
 
-- Maandtrend voor immigratie, emigratie en netto migratiesaldo.
-- Automatisch kerninzicht met de belangrijkste actuele ontwikkelingen.
+- Plot-first maandtrend met aparte schaal voor het netto migratiesaldo.
+- Compacte microplots voor het 12-maandssaldo, topland en topmotief.
 - Jaar-op-jaarvergelijkingen, zodat seizoenseffecten minder misleiden.
 - Toegankelijke tabelweergave met exacte maandcijfers.
 - Laatste CBS-publicatie met kerncijfers.
 - Verdeling naar herkomst: Nederland, Europa exclusief Nederland, buiten Europa.
 - Top herkomstlanden/gebieden voor de laatste CBS-maand.
-- Migratiemotief: aandeel arbeidsmigratie, asielmigratie, gezinsmigratie, studie, tijdelijke bescherming en overig.
+- Horizontale vergelijkingsplots voor herkomstlanden en migratiemotieven.
 - De maandcijfers blijven werken als de afzonderlijke migratiemotief-API tijdelijk uitvalt.
 - Open Graph/Twitter-metadata met een reproduceerbare social preview.
 
