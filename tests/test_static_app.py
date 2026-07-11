@@ -61,11 +61,37 @@ class StaticAppTests(unittest.TestCase):
         self.assertIn("renderMotiveChart", js)
         self.assertIn("motiveRows", js)
 
-    def test_css_is_responsive(self):
+    def test_page_has_publishable_social_metadata(self):
+        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        self.assertIn('name="description"', html)
+        self.assertIn('property="og:title"', html)
+        self.assertIn('property="og:image"', html)
+        self.assertIn('name="twitter:card"', html)
+        self.assertIn('rel="canonical"', html)
+
+    def test_dashboard_explains_the_data_and_exposes_exact_trend_values(self):
+        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        js = (ROOT / "app.js").read_text(encoding="utf-8")
+        self.assertIn("insightSummary", html)
+        self.assertIn("trendDataTableBody", html)
+        self.assertIn("updateInsightSummary", js)
+        self.assertIn("renderTrendTable", js)
+        self.assertIn("dezelfde maand vorig jaar", js)
+
+    def test_motive_failure_does_not_block_the_monthly_dashboard(self):
+        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        js = (ROOT / "app.js").read_text(encoding="utf-8")
+        self.assertIn("motiveError", html)
+        self.assertIn("fetchMigrationMotives().catch", js)
+        self.assertIn("motiveData.error", js)
+
+    def test_css_is_responsive_and_accessible(self):
         css = (ROOT / "styles.css").read_text(encoding="utf-8")
         self.assertIn("@media (max-width: 880px)", css)
         self.assertIn("@media (max-width: 640px)", css)
         self.assertIn("grid-template-columns", css)
+        self.assertIn(":focus-visible", css)
+        self.assertIn("prefers-reduced-motion", css)
 
 
 if __name__ == "__main__":

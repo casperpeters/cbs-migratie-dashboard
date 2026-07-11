@@ -94,7 +94,7 @@ async function loadDashboard() {
       cbsFetch('TypedDataSet', { '$filter': TOTAL_FILTER }),
       cbsFetch('Perioden'),
       cbsFetch('Herkomstland'),
-      fetchMigrationMotives()
+      fetchMigrationMotives().catch((error) => ({ error }))
     ]);
 
     state.periods = new Map(periodRows.map((row) => [row.Key, row]));
@@ -111,13 +111,24 @@ async function loadDashboard() {
     const rowsByHerkomst = new Map(latestOriginRows.map((row) => [row.Herkomstland, row]));
     state.originRows = buildOriginRows(rowsByHerkomst);
     state.countryRows = buildCountryRows(latestOriginRows, originCategories);
-    state.motiveRows = motiveData.rows;
-    state.motiveTotal = motiveData.total;
-    state.motivePeriod = motiveData.period;
-    state.motiveDetails = motiveData.details;
+    if (motiveData.error) {
+      console.warn('Migratiemotieven konden niet worden geladen:', motiveData.error);
+      state.motiveRows = [];
+      state.motiveTotal = 0;
+      state.motivePeriod = null;
+      state.motiveDetails = {};
+      $('motiveError').classList.remove('hidden');
+    } else {
+      $('motiveError').classList.add('hidden');
+      state.motiveRows = motiveData.rows;
+      state.motiveTotal = motiveData.total;
+      state.motivePeriod = motiveData.period;
+      state.motiveDetails = motiveData.details;
+    }
     state.fetchedAt = new Date();
 
     updateSummaryCards();
+    updateInsightSummary();
     renderTrendChart();
     renderOriginChart();
     renderOriginList();
@@ -241,7 +252,7 @@ function migrationValues(row = {}) {
 
 function updateSummaryCards() {
   const latest = state.latest;
-  const previous = state.monthly[state.monthly.length - 2];
+  const sameMonthLastYear = state.monthly[state.monthly.length - 13];
   const period = state.periods.get(latest.Perioden);
   const periodTitle = period?.Title ?? periodLabel(latest.Perioden);
   const status = period?.Status ?? 'CBS';
@@ -250,9 +261,9 @@ function updateSummaryCards() {
   $('latestStatus').textContent = status;
   $('heroSaldo').textContent = formatSigned(latest.MigratiesaldoInclusiefAdministratie_3);
 
-  setMetric('immigration', latest.Immigratie_1, delta(latest, previous, 'Immigratie_1'), 't.o.v. vorige maand');
-  setMetric('emigration', latest.EmigratieInclusiefAdministratieveC_2, delta(latest, previous, 'EmigratieInclusiefAdministratieveC_2'), 't.o.v. vorige maand');
-  setMetric('saldo', latest.MigratiesaldoInclusiefAdministratie_3, delta(latest, previous, 'MigratiesaldoInclusiefAdministratie_3'), 't.o.v. vorige maand', true);
+  setMetric('immigration', latest.Immigratie_1, delta(latest, sameMonthLastYear, 'Immigratie_1'), 't.o.v. dezelfde maand vorig jaar');
+  setMetric('emigration', latest.EmigratieInclusiefAdministratieveC_2, delta(latest, sameMonthLastYear, 'EmigratieInclusiefAdministratieveC_2'), 't.o.v. dezelfde maand vorig jaar');
+  setMetric('saldo', latest.MigratiesaldoInclusiefAdministratie_3, delta(latest, sameMonthLastYear, 'MigratiesaldoInclusiefAdministratie_3'), 't.o.v. dezelfde maand vorig jaar', true);
 
   const last12 = state.monthly.slice(-12);
   const previous12 = state.monthly.slice(-24, -12);
@@ -265,6 +276,35 @@ function updateSummaryCards() {
   $('twelveMonthCaption').className = sumPrevious12 !== null ? classFor(sum12 - sumPrevious12) : '';
 }
 
+function updateInsightSummary() {
+  const latest = state.latest;
+  const last12 = state.monthly.slice(-12);
+  const previous12 = state.monthly.slice(-24, -12);
+  const saldo12 = sum(last12, 'MigratiesaldoInclusiefAdministratie_3');
+  const previousSaldo12 = previous12.length === 12 ? sum(previous12, 'MigratiesaldoInclusiefAdministratie_3') : null;
+  const topCountry = state.countryRows[0];
+  const dominantMotive = [...state.motiveRows].sort((a, b) => b.value - a.value)[0];
+
+  const sentences = [
+    `In ${periodLabel(latest.Perioden)} kwamen ${formatter.format(latest.Immigratie_1)} mensen naar Nederland en vertrokken er ${formatter.format(latest.EmigratieInclusiefAdministratieveC_2)}. Het saldo was ${formatSigned(latest.MigratiesaldoInclusiefAdministratie_3)}.`
+  ];
+
+  if (previousSaldo12 !== null) {
+    const difference = saldo12 - previousSaldo12;
+    const direction = difference > 0 ? 'hoger' : difference < 0 ? 'lager' : 'gelijk';
+    const comparison = difference === 0 ? direction : `${formatter.format(Math.abs(difference))} ${direction}`;
+    sentences.push(`Over de laatste 12 maanden was het saldo ${formatSigned(saldo12)}; ${comparison} dan in de 12 maanden ervoor.`);
+  }
+  if (topCountry) {
+    sentences.push(`${topCountry.label} was het grootste afzonderlijke herkomstland met ${percentFormatter.format(topCountry.share)} van de immigratie in de laatste maand.`);
+  }
+  if (dominantMotive) {
+    sentences.push(`Binnen de jaarlijkse niet-EU/EFTA-dataset was ${dominantMotive.label.toLowerCase()} het grootste migratiemotief (${percentFormatter.format(dominantMotive.share)}).`);
+  }
+
+  $('insightSummary').textContent = sentences.join(' ');
+}
+
 function setMetric(prefix, value, change, caption, signed = false) {
   $(`${prefix}Value`).textContent = signed ? formatSigned(value) : formatter.format(value);
   const deltaEl = $(`${prefix}Delta`);
@@ -273,9 +313,11 @@ function setMetric(prefix, value, change, caption, signed = false) {
 }
 
 function renderTrendChart() {
-  if (!state.monthly.length || !window.Chart) return;
+  if (!state.monthly.length) return;
 
   const rows = state.range === 'all' ? state.monthly : state.monthly.slice(-state.range);
+  renderTrendTable(rows);
+  if (!window.Chart) return;
   const labels = rows.map((row) => periodLabel(row.Perioden, true));
   const saldo = rows.map((row) => row.MigratiesaldoInclusiefAdministratie_3);
   const immigratie = rows.map((row) => row.Immigratie_1);
@@ -332,6 +374,16 @@ function renderTrendChart() {
     data: { labels, datasets },
     options: baseChartOptions('Aantal personen')
   });
+}
+
+function renderTrendTable(rows) {
+  $('trendDataTableBody').innerHTML = [...rows].reverse().map((row) => `
+    <tr>
+      <th scope="row">${escapeHtml(periodLabel(row.Perioden))}</th>
+      <td>${formatter.format(row.Immigratie_1)}</td>
+      <td>${formatter.format(row.EmigratieInclusiefAdministratieveC_2)}</td>
+      <td>${formatSigned(row.MigratiesaldoInclusiefAdministratie_3)}</td>
+    </tr>`).join('');
 }
 
 function renderOriginChart() {

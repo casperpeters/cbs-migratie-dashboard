@@ -5,6 +5,7 @@
   "description": "Live CBS migratie dashboard voor Nederland",
   "scripts": {
     "test": "python -m unittest discover -s tests -v",
-    "check:js": "node --check app.js"
+    "check:js": "node --check app.js",
+    "generate:og": "python scripts/generate_og_image.py"
   }
 }

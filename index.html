@@ -4,7 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#08090a">
+  <meta name="description" content="Actuele migratiecijfers voor Nederland: immigratie, emigratie, migratiesaldo, herkomstlanden en migratiemotieven op basis van live CBS-data.">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="nl_NL">
+  <meta property="og:title" content="MigratieMonitor NL · actuele CBS-cijfers">
+  <meta property="og:description" content="Bekijk de nieuwste Nederlandse migratiecijfers, trends, herkomstlanden en migratiemotieven.">
+  <meta property="og:url" content="https://casperpeters.github.io/cbs-migratie-dashboard/">
+  <meta property="og:image" content="https://casperpeters.github.io/cbs-migratie-dashboard/cbs-migratie-dashboard.png">
+  <meta name="twitter:card" content="summary_large_image">
   <title>MigratieMonitor NL · CBS live dashboard</title>
+  <link rel="canonical" href="https://casperpeters.github.io/cbs-migratie-dashboard/">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -13,6 +22,7 @@
   <script src="app.js" defer></script>
 </head>
 <body>
+  <a class="skip-link" href="#dashboardContent">Ga naar de cijfers</a>
   <div class="orb orb-one" aria-hidden="true"></div>
   <div class="orb orb-two" aria-hidden="true"></div>
 
@@ -88,6 +98,14 @@
       </article>
     </section>
 
+    <section id="dashboardContent" class="insight-panel" aria-labelledby="insightTitle">
+      <div class="insight-label">Kerninzicht</div>
+      <div>
+        <h2 id="insightTitle">Wat valt op?</h2>
+        <p id="insightSummary" aria-live="polite">De duiding verschijnt zodra de CBS-data is geladen.</p>
+      </div>
+    </section>
+
     <section id="trend" class="panel chart-panel">
       <div class="panel-head">
         <div>
@@ -105,6 +123,18 @@
         <canvas id="trendChart" aria-label="Trendgrafiek immigratie emigratie migratiesaldo" role="img"></canvas>
       </div>
       <p class="source-note">Emigratie is inclusief saldo administratieve correcties, conform CBS-definitie.</p>
+      <details class="data-details">
+        <summary>Bekijk exacte cijfers als tabel</summary>
+        <div class="table-scroll">
+          <table>
+            <caption>Maandelijkse immigratie, emigratie inclusief administratieve correcties en migratiesaldo</caption>
+            <thead>
+              <tr><th scope="col">Periode</th><th scope="col">Immigratie</th><th scope="col">Emigratie</th><th scope="col">Saldo</th></tr>
+            </thead>
+            <tbody id="trendDataTableBody"></tbody>
+          </table>
+        </div>
+      </details>
     </section>
 
     <section class="dashboard-grid">
@@ -162,6 +192,9 @@
 
       <div class="motive-note">
         <strong>Let op:</strong> CBS publiceert migratiemotief als jaarlijkse data voor immigranten met een niet-EU/EFTA-nationaliteit. Dit loopt dus niet 1-op-1 met de maandcijfers hierboven.
+      </div>
+      <div id="motiveError" class="inline-error hidden" role="status">
+        De maandcijfers zijn beschikbaar, maar de migratiemotieven konden tijdelijk niet worden geladen.
       </div>
 
       <div class="motive-cards" aria-label="Aandeel arbeidsmigratie en asielmigratie">
